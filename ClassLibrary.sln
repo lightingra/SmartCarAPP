@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29806.167
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClassLibrary", "ClassLibrary\ClassLibrary.csproj", "{0B24D587-ED09-4370-9ECC-BEC2534AFA4A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartCar", "SmartCar\SmartCar.csproj", "{67DF5D33-2D33-4FDC-890D-49B6A467C459}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{77479722-F498-4A79-9475-7F9AD8202B8E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0B24D587-ED09-4370-9ECC-BEC2534AFA4A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B24D587-ED09-4370-9ECC-BEC2534AFA4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B24D587-ED09-4370-9ECC-BEC2534AFA4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B24D587-ED09-4370-9ECC-BEC2534AFA4A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{67DF5D33-2D33-4FDC-890D-49B6A467C459}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{67DF5D33-2D33-4FDC-890D-49B6A467C459}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{67DF5D33-2D33-4FDC-890D-49B6A467C459}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{67DF5D33-2D33-4FDC-890D-49B6A467C459}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77479722-F498-4A79-9475-7F9AD8202B8E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77479722-F498-4A79-9475-7F9AD8202B8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77479722-F498-4A79-9475-7F9AD8202B8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77479722-F498-4A79-9475-7F9AD8202B8E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8F2ED512-0555-46BB-AD12-92513996004D}
+	EndGlobalSection
+EndGlobal
