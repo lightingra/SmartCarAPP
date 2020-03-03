@@ -13,6 +13,7 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.VideoStab;
 using Emgu.CV.Structure;
+using System.Threading;
 
 namespace Test
 {
@@ -22,6 +23,7 @@ namespace Test
         VideoCapture cameras = new VideoCapture(1);
         Mat mat = new Mat();
         Mat mat1 = new Mat();
+        bool flag = false;
 
         public Form1()
         {
@@ -35,6 +37,11 @@ namespace Test
         {
             cameras.Retrieve(mat, 0);
             imageBox1.Image = mat;
+            CvInvoke.Resize(mat, mat1, new Size(80, 60));
+            byte[] head = new byte[] { 0x55, 0xaa, (byte)(mat1.Width >> 8), (byte)(mat1.Width & 0xff), (byte)(mat1.Height >> 8), (byte)(mat1.Height & 0xff), 0x03, 0xad };
+            com.write(head);
+            byte[] img = mat1.ToImage<Rgb, byte>().Bytes;
+            com.write(img);
         }
 
         private void timer1_Tick(object sender, EventArgs e)
@@ -69,12 +76,7 @@ namespace Test
 
         private void button2_Click(object sender, EventArgs e)
         {
-            mat1 = cameras.QueryFrame();
-            CvInvoke.Resize(mat1, mat1, new Size(80, 60));
-            byte[] head = new byte[] { 0x55, 0xaa, (byte)(mat1.Width >> 8), (byte)(mat1.Width & 0xff), (byte)(mat1.Height >> 8), (byte)(mat1.Height & 0xff), 0x01, 0xab };
-            com.write(head);
-            byte[] img = mat1.ToImage<Gray, byte>().Bytes;
-            com.write(img);
+            flag = !flag;
         }
     }
 }

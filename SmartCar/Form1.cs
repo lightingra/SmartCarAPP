@@ -17,7 +17,9 @@ namespace SmartCar
     public partial class Form1 : Form
     {
         ComSerial com = new ComSerial();
-        Camera camera = new Camera();
+        ComCamera camera = new ComCamera();
+        Bitmap bitmap;
+
         public Form1()
         {
             InitializeComponent();
@@ -56,21 +58,7 @@ namespace SmartCar
                 }
                 if(camera.BytesCount>0)
                 {
-                    List<byte> buff = new List<byte>();
-                    buff.AddRange(camera.Bytes);
-                    int w = (buff[1] << 8) + buff[2];
-                    int h = (buff[3] << 8) + buff[4];
-                    buff.RemoveRange(0, 7);
-                    Bitmap bitmap = new Bitmap(w, h, PixelFormat.Format8bppIndexed);
-                    BitmapData dat = bitmap.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.ReadWrite, bitmap.PixelFormat);
-                    Marshal.Copy(buff.ToArray(), 0, dat.Scan0, buff.Count);
-                    bitmap.UnlockBits(dat);
-                    ColorPalette palette = bitmap.Palette;
-                    for(int i=0;i<256;i++)
-                    {
-                        palette.Entries[i] = Color.FromArgb(255,i, i, i);
-                    }
-                    bitmap.Palette = palette;
+                    bitmap = new Bitmap(camera.Bytes);
                     pictureBox1.Image = bitmap;
                 }
             }
@@ -97,6 +85,30 @@ namespace SmartCar
         private void button2_Click(object sender, EventArgs e)
         {
             textBox1.Clear();
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            if(textBox2.Text!=null)
+            {
+                com.write(Encoding.Default.GetBytes(textBox2.Text));
+                textBox2.Clear();
+            }
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog saveFile = new SaveFileDialog();
+            saveFile.DefaultExt = ".bmp";
+            saveFile.Filter = "位图(*.bmp)|*.bmp";
+            if (saveFile.ShowDialog() == DialogResult.OK)
+            {
+                if (pictureBox1.Image != null)
+                {
+                    pictureBox1.Image.Save(saveFile.FileName,ImageFormat.Bmp);
+                }
+            }
+            saveFile.Dispose();
         }
     }
 }
