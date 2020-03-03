@@ -7,10 +7,6 @@ using System.Threading.Tasks;
 using System.IO.Ports;
 using System.Threading;
 
-using Emgu.CV;
-using Emgu.CV.Structure;
-using Emgu.CV.CvEnum;
-
 namespace ClassLibrary
 {
     public class ComSerial
@@ -197,9 +193,37 @@ namespace ClassLibrary
         #region 数据接收
         ReaderWriterLockSlim cacheLock = new ReaderWriterLockSlim();
         List<byte> buff = new List<byte>();
-        public Queue<Mat> image = new Queue<Mat>();
+        Queue<byte[]> image = new Queue<byte[]>();
         int flag = 0;
         int w, h, len;
+
+        public int BytesCount
+        {
+            get
+            {
+                return image.Count;
+            }
+        }
+
+        public byte[] Bytes
+        {
+            get
+            {
+                if(image.Count>0)
+                {
+                    cacheLock.EnterReadLock();
+                    try
+                    {
+                        return image.Dequeue();
+                    }
+                    finally
+                    {
+                        cacheLock.ExitReadLock();
+                    }
+                }
+                return null;
+            }
+        }
 
         public void Add(byte[] bs)
         {
@@ -234,10 +258,10 @@ namespace ClassLibrary
 
         void FindHead()
         {
-            if(flag == 0)
+            if (flag == 0)
             {
                 int index = buff.IndexOf(0x55);
-                if(index!=-1)
+                if (index != -1)
                 {
                     buff.RemoveRange(0, index + 1);
                     flag = 1;
@@ -251,11 +275,11 @@ namespace ClassLibrary
 
         void CheckHead()
         {
-            if(flag==1)
+            if (flag == 1)
             {
-                if(buff.Count>=7)
+                if (buff.Count >= 7)
                 {
-                    if(buff[0]==0xaa && buff[6]==0xaa+buff[5])
+                    if (buff[0] == 0xaa && buff[6] == 0xaa + buff[5])
                     {
                         w = (buff[1] << 8) + buff[2];
                         h = (buff[3] << 8) + buff[4];
@@ -270,25 +294,12 @@ namespace ClassLibrary
 
         void CheckDat()
         {
-            if(flag==2)
+            if (flag == 2)
             {
-                if(buff.Count>=len)
+                if (buff.Count >= len)
                 {
-                    if (buff[5] == 1)
-                    {
-                        Image<Gray, byte> img = new Image<Gray, byte>(w, h);
-                        buff.RemoveRange(0, 7);
-                        img.Bytes = buff.ToArray();
-                        image.Enqueue(img.Mat);
-                    }
-                    else if(buff[5]==3)
-                    {
-                        Image<Rgb, byte> img = new Image<Rgb, byte>(w, h);
-                        buff.RemoveRange(0, 7);
-                        img.Bytes = buff.ToArray();
-                        image.Enqueue(img.Mat);
-                    }
-                    buff.Clear();
+                    image.Enqueue(buff.GetRange(0, len).ToArray());
+                    buff.RemoveRange(0, len);
                     flag = 0;
                 }
             }
