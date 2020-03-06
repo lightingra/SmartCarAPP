@@ -92,13 +92,13 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ClassLibrary\ClassLibrary.csproj">
-      <Project>{0b24d587-ed09-4370-9ecc-bec2534afa4a}</Project>
-      <Name>ClassLibrary</Name>
-    </ProjectReference>
+    <Content Include="License-LGPL.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="License-LGPL.txt" />
+    <ProjectReference Include="..\SmartCar\SmartCar.csproj">
+      <Project>{67df5d33-2d33-4fdc-890d-49b6a467c459}</Project>
+      <Name>SmartCar</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Emgu.CV.runtime.windows.4.2.0.3662\build\Emgu.CV.runtime.windows.targets" Condition="Exists('..\packages\Emgu.CV.runtime.windows.4.2.0.3662\build\Emgu.CV.runtime.windows.targets')" />

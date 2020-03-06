@@ -12,6 +12,144 @@ using System.Threading;
 
 namespace SmartCar
 {
+    /// <summary>
+    /// 队列形式的列表缓存区
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public class ListCacheLock<T>
+    {
+        List<T> buff = new List<T>();
+        ReaderWriterLockSlim cacheLock = new ReaderWriterLockSlim();
+
+        /// <summary>
+        /// 读取一定范围的数据，深复制
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="len"></param>
+        /// <returns></returns>
+        public T[] GetRange(int index, int len)
+        {
+            cacheLock.EnterReadLock();
+            try
+            {
+                return buff.GetRange(index, len).ToArray();
+            }
+            finally
+            {
+                cacheLock.ExitReadLock();
+            }
+        }
+
+        /// <summary>
+        /// 删除索引处开始一定长度的数据
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="len"></param>
+        public void RemoveRange(int index, int len)
+        {
+            cacheLock.EnterReadLock();
+            try
+            {
+                buff.RemoveRange(index, len);
+            }
+            finally
+            {
+                cacheLock.ExitReadLock();
+            }
+        }
+
+        /// <summary>
+        /// 读取数据
+        /// </summary>
+        /// <returns></returns>
+        public T[] Read()
+        {
+            cacheLock.EnterReadLock();
+            try
+            {
+                return buff.ToArray();
+            }
+            finally
+            {
+                cacheLock.EnterReadLock();
+            }
+        }
+
+        /// <summary>
+        /// 从索引处读取数据
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        public T Read(int index)
+        {
+            cacheLock.EnterReadLock();
+            try
+            {
+                return buff[index];
+            }
+            finally
+            {
+                cacheLock.ExitReadLock();
+            }
+        }
+
+        /// <summary>
+        /// 已缓存的数据大小
+        /// </summary>
+        public int Count
+        {
+            get
+            {
+                return buff.Count;
+            }
+        }
+
+        /// <summary>
+        /// 查找帧头
+        /// </summary>
+        /// <param name="dat"></param>
+        /// <returns></returns>
+        public bool IndexOf(T dat)
+        {
+            cacheLock.EnterReadLock();
+            try
+            {
+                int index = buff.IndexOf(dat);
+                if (index != -1)
+                {
+                    buff.RemoveRange(0, index + 1);
+                    return true;
+                }
+                buff.Clear();
+                return false;
+            }
+            finally
+            {
+                cacheLock.ExitReadLock();
+            }
+        }
+
+        /// <summary>
+        /// 添加数据进入缓存区
+        /// </summary>
+        /// <param name="dat"></param>
+        public void AddRange(T[] dat)
+        {
+            cacheLock.EnterWriteLock();
+            try
+            {
+                buff.AddRange(dat);
+            }
+            finally
+            {
+                cacheLock.ExitWriteLock();
+            }
+        }
+    }
+
+    /// <summary>
+    /// 串口的数据转换为图片
+    /// </summary>
     public class ComCamera
     {
         public ComCamera()
@@ -22,13 +160,15 @@ namespace SmartCar
         }
 
         #region 数据接收
-        ReaderWriterLockSlim cacheLock = new ReaderWriterLockSlim();
-        List<byte> buff = new List<byte>();
-        Queue<Bitmap> image = new Queue<Bitmap>();
+        ListCacheLock<byte> buff = new ListCacheLock<byte>();
+        QueueCacheLock<Bitmap> image = new QueueCacheLock<Bitmap>();
         int flag = 0;
         int w, h, len;
         Bitmap bitmap;
 
+        /// <summary>
+        /// 缓存区的大小
+        /// </summary>
         public int BytesCount
         {
             get
@@ -37,85 +177,71 @@ namespace SmartCar
             }
         }
 
+        /// <summary>
+        /// 从缓存区读取数据
+        /// </summary>
         public Bitmap Bytes
         {
             get
             {
                 if (image.Count > 0)
                 {
-                    cacheLock.EnterReadLock();
-                    try
-                    {
-                        return image.Dequeue();
-                    }
-                    finally
-                    {
-                        cacheLock.ExitReadLock();
-                    }
+                    return image.Read();
                 }
                 return null;
             }
         }
 
+        /// <summary>
+        /// 添加数据到待处理的数据缓存区
+        /// </summary>
+        /// <param name="bs"></param>
         public void Add(byte[] bs)
         {
-            cacheLock.EnterWriteLock();
-            try
-            {
-                buff.AddRange(bs);
-            }
-            finally
-            {
-                cacheLock.ExitWriteLock();
-            }
+            buff.AddRange(bs);
         }
 
+        /// <summary>
+        /// 解析协议
+        /// </summary>
         public void Check()
         {
             while (true)
             {
-                cacheLock.EnterReadLock();
-                try
-                {
-                    FindHead();
-                    CheckHead();
-                    CheckDat();
-                }
-                finally
-                {
-                    cacheLock.ExitReadLock();
-                }
+                FindHead();
+                CheckHead();
+                CheckDat();
             }
         }
 
+        /// <summary>
+        /// 查找帧头
+        /// </summary>
         void FindHead()
         {
             if (flag == 0)
             {
-                int index = buff.IndexOf(0x55);
-                if (index != -1)
+                if (buff.IndexOf(0x55))
                 {
-                    buff.RemoveRange(0, index + 1);
                     flag = 1;
-                }
-                else
-                {
-                    buff.Clear();
                 }
             }
         }
 
+        /// <summary>
+        /// 校核帧头
+        /// </summary>
         void CheckHead()
         {
             if (flag == 1)
             {
                 if (buff.Count >= 7)
                 {
-                    if (buff[0] == 0xaa && buff[6] == 0xaa + buff[5])
+                    if (buff.Read(0) == 0xaa && buff.Read(6) == 0xaa + buff.Read(5))
                     {
-                        w = (buff[1] << 8) + buff[2];
-                        h = (buff[3] << 8) + buff[4];
-                        len = w * h * buff[5] + 7;
+                        w = (buff.Read(1) << 8) + buff.Read(2);
+                        h = (buff.Read(3) << 8) + buff.Read(4);
+                        len = w * h * buff.Read(5) + 7;
                         flag = 2;
                         return;
                     }
@@ -124,21 +250,24 @@ namespace SmartCar
             }
         }
 
+        /// <summary>
+        /// 校核数据
+        /// </summary>
         void CheckDat()
         {
             if (flag == 2)
             {
                 if (buff.Count >= len)
                 {
-                    if (buff[5] == 0x01)
+                    if (buff.Read(5) == 0x01)
                     {
                         bpp8();
                     }
-                    else if (buff[5] == 0x02)
+                    else if (buff.Read(5) == 0x02)
                     {
                         bpprgb565();
                     }
-                    else if (buff[5] == 0x03)
+                    else if (buff.Read(5) == 0x03)
                     {
                         bpprgb();
                     }
@@ -162,7 +291,7 @@ namespace SmartCar
             bitmap.Palette = palette;
             Marshal.Copy(buff.GetRange(7, len - 7).ToArray(), 0, dat.Scan0, len - 7);
             bitmap.UnlockBits(dat);
-            image.Enqueue(bitmap);
+            image.Add(bitmap);
         }
 
         void bpprgb565()
@@ -171,7 +300,7 @@ namespace SmartCar
             BitmapData dat = bitmap.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.ReadWrite, bitmap.PixelFormat);
             Marshal.Copy(buff.GetRange(7, len - 7).ToArray(), 0, dat.Scan0, len - 7);
             bitmap.UnlockBits(dat);
-            image.Enqueue(bitmap);
+            image.Add(bitmap);
         }
 
         void bpprgb()
@@ -180,7 +309,7 @@ namespace SmartCar
             BitmapData dat = bitmap.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.ReadWrite, bitmap.PixelFormat);
             Marshal.Copy(buff.GetRange(7, len - 7).ToArray(), 0, dat.Scan0, len - 7);
             bitmap.UnlockBits(dat);
-            image.Enqueue(bitmap);
+            image.Add(bitmap);
         }
         #endregion
     }
