@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
-using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Drawing.Imaging;
-
 using System.Threading;
 
 namespace SmartCar
@@ -152,6 +154,9 @@ namespace SmartCar
     /// </summary>
     public class ComCamera
     {
+        /// <summary>
+        /// 创建实例
+        /// </summary>
         public ComCamera()
         {
             Thread thread = new Thread(new ThreadStart(Check));
@@ -314,5 +319,128 @@ namespace SmartCar
         #endregion
     }
 
+    public class ComVirtualOsc
+    {
+        /// <summary>
+        /// 创建实例
+        /// </summary>
+        public ComVirtualOsc()
+        {
+            Thread thread = new Thread(new ThreadStart(Check));
+            thread.IsBackground = true;
+            thread.Start();
+        }
 
+        #region 数据解析
+        /// <summary>
+        /// 变量
+        /// </summary>
+        QueueCacheLock<float[]> cache = new QueueCacheLock<float[]>();
+        ListCacheLock<byte> buff = new ListCacheLock<byte>();
+        int flag = 0;
+        int len = 0;
+
+        /// <summary>
+        /// 从缓冲区读取数据
+        /// </summary>
+        public float[] Bytes
+        {
+            get
+            {
+                return cache.Read();
+            }
+        }
+
+        /// <summary>
+        /// 解析协议
+        /// </summary>
+        public void Check()
+        {
+            while (true)
+            {
+                FindHead();
+                CheckHead();
+                CheckDat();
+            }
+        }
+
+        /// <summary>
+        /// 已缓存的数据数量
+        /// </summary>
+        public int Count
+        {
+            get
+            {
+                return cache.Count;
+            }
+        }
+
+        /// <summary>
+        /// 添加数据到待处理的数据缓存区
+        /// </summary>
+        /// <param name="bs"></param>
+        public void Add(byte[] bs)
+        {
+            buff.AddRange(bs);
+        }
+
+        /// <summary>
+        /// 查找帧头
+        /// </summary>
+        void FindHead()
+        {
+            if (flag == 0)
+            {
+                if (buff.IndexOf(0x55))
+                {
+                    flag = 1;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 校核帧头
+        /// </summary>
+        void CheckHead()
+        {
+            if (flag == 1)
+            {
+                if (buff.Count >= 4)
+                {
+                    if (buff.Read(0) == 0xaa && buff.Read(3) == 0x0d && buff.Read(1) < 7)
+                    {
+                        len = buff.Read(1) * 4 + 4;
+                        flag = 2;
+                        return;
+                    }
+                    flag = 0;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 校核数据
+        /// </summary>
+        void CheckDat()
+        {
+            if (flag == 2)
+            {
+                if (buff.Count >= len)
+                {
+                    float[] datBuff = new float[6];
+                    for (int i = 0; i < buff.Read(1); i++)
+                    {
+                        datBuff[i] += buff.Read(4 + i * 4) << 24;
+                        datBuff[i] += buff.Read(5 + i * 4) << 16;
+                        datBuff[i] += buff.Read(6 + i * 4) << 8;
+                        datBuff[i] += buff.Read(7 + i * 4) << 0;
+                    }
+                    cache.Add(datBuff);
+                    buff.RemoveRange(0, len);
+                    flag = 0;
+                }
+            }
+        }
+        #endregion
+    }
 }

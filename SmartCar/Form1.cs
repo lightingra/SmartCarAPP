@@ -17,11 +17,14 @@ namespace SmartCar
     {
         ComSerial com = new ComSerial();
         ComCamera camera = new ComCamera();
+        ComVirtualOsc osc = new ComVirtualOsc();
         Bitmap bitmap;
+        VirtualOsc OscFrom = new VirtualOsc();
 
         public Form1()
         {
             InitializeComponent();
+            OscFrom.Show();
         }
 
         private void timer1_Tick(object sender, EventArgs e)
@@ -50,6 +53,17 @@ namespace SmartCar
                 {
                     bitmap = new Bitmap(camera.Bytes);
                     pictureBox1.Image = bitmap;
+                }
+            }
+            else if(tabControl1.SelectedIndex == 2)
+            {
+                while(com.Count>0)
+                {
+                    osc.Add(com.Read());
+                }
+                while(osc.Count>0)
+                {
+                    OscFrom.Add(osc.Bytes);
                 }
             }
         }
