@@ -19,12 +19,13 @@ namespace SmartCar
         ComCamera camera = new ComCamera();
         ComVirtualOsc osc = new ComVirtualOsc();
         Bitmap bitmap;
-        VirtualOsc OscFrom = new VirtualOsc();
+
+        public delegate void AddDelegate(float[] dat ,string name);
+        public event AddDelegate AddEventArgs;
 
         public Form1()
         {
             InitializeComponent();
-            OscFrom.Show();
         }
 
         private void timer1_Tick(object sender, EventArgs e)
@@ -55,15 +56,15 @@ namespace SmartCar
                     pictureBox1.Image = bitmap;
                 }
             }
-            else if(tabControl1.SelectedIndex == 2)
+            else if (tabControl1.SelectedIndex == 2)
             {
-                while(com.Count>0)
+                while (com.Count > 0)
                 {
                     osc.Add(com.Read());
                 }
-                while(osc.Count>0)
+                while (osc.Count > 0)
                 {
-                    OscFrom.Add(osc.Bytes);
+                    AddEventArgs(osc.Bytes ,"PID");
                 }
             }
         }
@@ -113,6 +114,17 @@ namespace SmartCar
                 }
             }
             saveFile.Dispose();
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            if (textBox3.Text != null)
+            {
+                VirtualOsc OscForm = new VirtualOsc();
+                AddEventArgs += new AddDelegate(OscForm.Add);
+                OscForm.Text = textBox3.Text;
+                OscForm.Show();
+            }
         }
     }
 }

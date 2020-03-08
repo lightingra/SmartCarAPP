@@ -88,6 +88,8 @@
             this.chart1.Size = new System.Drawing.Size(872, 504);
             this.chart1.TabIndex = 0;
             this.chart1.Text = "chart1";
+            this.chart1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.chart1_KeyDown);
+            this.chart1.KeyUp += new System.Windows.Forms.KeyEventHandler(this.chart1_KeyUp);
             // 
             // VirtualOsc
             // 
