@@ -59,11 +59,19 @@ namespace SmartCar
     public class ComSerial
     {
         SerialPort com = new SerialPort();
-        QueueCacheLock<byte[]> queueCache = new QueueCacheLock<byte[]>();
+
+        public delegate void ComDataReceived(byte[] buff);
+        public event ComDataReceived ComDataReceivedEvent;
 
         public ComSerial()
         {
             com.DataReceived += Com_DataReceived;
+            ComDataReceivedEvent += ComSerial_ComDataReceivedEvent;
+        }
+
+        private void ComSerial_ComDataReceivedEvent(byte[] buff)
+        {
+            
         }
 
         //将收到的数据加入队列缓冲区
@@ -72,7 +80,7 @@ namespace SmartCar
             int len = com.BytesToRead;
             byte[] buff = new byte[len];
             com.Read(buff, 0, len);
-            queueCache.Add(buff);
+            ComDataReceivedEvent(buff);
         }
 
         /// <summary>
@@ -101,30 +109,6 @@ namespace SmartCar
                 }
                 return new string[] { "null"};
             }
-        }
-
-        /// <summary>
-        /// 当前缓冲区数据量
-        /// </summary>
-        public int Count
-        {
-            get
-            {
-                return queueCache.Count;
-            }
-        }
-
-        /// <summary>
-        /// 从缓冲区读取数据
-        /// </summary>
-        /// <returns></returns>
-        public byte[] Read()
-        {
-            if(queueCache.Count>0)
-            {
-                return queueCache.Read();
-            }
-            return null;
         }
 
         /// <summary>
